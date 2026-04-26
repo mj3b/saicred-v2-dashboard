@@ -1,7 +1,9 @@
 # SAICRED v2 — Benchmark Results Dashboard
 
 **Standard for Assessing AI for Catholic Reliability and Doctrinal Fidelity**
-Version 2.0 · April 2026 · Dr. Filip Ponulak, Project Lead
+Version 2.0
+April 2026
+Dr. Filip Ponulak, Project Lead
 
 ---
 
@@ -115,7 +117,5 @@ The current rankings are preliminary in two respects. First, all 400 prompts def
 
 ## Project
 
-SAICRED is an open-source Catholic AI benchmark led by Dr. Filip Ponulak and released under the Catholic Digital Commons Foundation.
-
-White paper: [SAICRED — Standard for Assessing AI for Catholic Reliability and Doctrinal Fidelity](https://docs.google.com/document/d/1VvGeY_T56KNvOaY3n2GAsNSr4AqEgfVgRh5vmadRawg/edit?usp=sharing)
+SAICRED is an open-source Catholic AI benchmark led by Dr. Filip Ponulak.
 
