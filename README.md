@@ -1,8 +1,11 @@
 # SAICRED v2 — Benchmark Results Dashboard
 
 **Standard for Assessing AI for Catholic Reliability and Doctrinal Fidelity**
+
 Version 2.0
+
 April 2026
+
 Dr. Filip Ponulak, Project Lead
 
 ---
