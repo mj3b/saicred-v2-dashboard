@@ -1,12 +1,7 @@
 # SAICRED v2 — Benchmark Results Dashboard
 
 **Standard for Assessing AI for Catholic Reliability and Doctrinal Fidelity**
-
-Version 2.0
-
-April 2026
-
-Dr. Filip Ponulak, Project Lead
+Version 2.0 · April 2026 · Dr. Filip Ponulak, Project Lead
 
 ---
 
@@ -93,9 +88,9 @@ o3 came closest at an average CDFI of 84.9 — 0.1 points below the formation th
 
 ## How to Use
 
-Download `index.html` and open it in any modern browser. No server, no database, no dependencies to install. Chart.js loads from CDN. All data is embedded in the file.
+**Live dashboard:** [https://mj3b.github.io/saicred-v2-dashboard](https://mj3b.github.io/saicred-v2-dashboard)
 
-To host on GitHub Pages: upload `index.html` to a public repository, enable Pages under Settings → Pages, and deploy from the main branch root.
+Click the link above. No login, no download, no installation required. Opens directly in any modern browser.
 
 ---
 
@@ -120,5 +115,7 @@ The current rankings are preliminary in two respects. First, all 400 prompts def
 
 ## Project
 
-SAICRED is an open-source Catholic AI benchmark led by Dr. Filip Ponulak.
+SAICRED is an open-source Catholic AI benchmark led by Dr. Filip Ponulak and released under the Catholic Digital Commons Foundation.
+
+White paper: [SAICRED — Standard for Assessing AI for Catholic Reliability and Doctrinal Fidelity](https://docs.google.com/document/d/1VvGeY_T56KNvOaY3n2GAsNSr4AqEgfVgRh5vmadRawg/edit?usp=sharing)
 
