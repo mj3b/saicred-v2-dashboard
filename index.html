@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAICRED v2 — Benchmark Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --navy: #1a2744;
+  --blue: #2563eb;
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --grey: #6b7280;
+  --bg: #f8f7f4;
+  --surface: #ffffff;
+  --border: #e5e3de;
+  --text: #1a1a1a;
+  --text-muted: #6b7280;
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+/* HEADER */
+.header { background: var(--navy); color: white; padding: 32px 40px 28px; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.header-left h1 { font-family: var(--font-display); font-size: 28px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 4px; }
+.header-left p { font-size: 13px; opacity: 0.65; font-weight: 300; }
+.header-stats { display: flex; gap: 24px; }
+.hstat { text-align: right; }
+.hstat .n { font-family: var(--font-mono); font-size: 22px; font-weight: 500; line-height: 1; }
+.hstat .l { font-size: 11px; opacity: 0.55; margin-top: 3px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* NAV */
+.nav-wrap { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+.nav { display: flex; gap: 0; padding: 0 40px; overflow-x: auto; }
+.nav button { font-family: var(--font-body); font-size: 12px; font-weight: 500; padding: 14px 18px; border: none; background: transparent; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; letter-spacing: 0.01em; }
+.nav button:hover { color: var(--text); }
+.nav button.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+/* LAYOUT */
+.page { display: none; padding: 32px 40px; max-width: 1200px; }
+.page.active { display: block; }
+.section-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+.section-gap { margin-top: 32px; }
+
+/* METRIC CARDS */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
+.kpi .val { font-family: var(--font-mono); font-size: 26px; font-weight: 500; color: var(--navy); line-height: 1; }
+.kpi .lbl { font-size: 11px; color: var(--text-muted); margin-top: 5px; letter-spacing: 0.04em; }
+
+/* CHART CONTAINERS */
+.chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; }
+.chart-box h3 { font-size: 13px; font-weight: 500; margin-bottom: 16px; color: var(--navy); }
+.chart-wrap { position: relative; width: 100%; }
+
+/* LEGEND */
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
+.legend span { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+.legend .dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* TABLES */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 10px 14px; background: #f8f7f4; border-bottom: 1px solid var(--border); text-align: left; font-weight: 400; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+
+/* BADGES */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; }
+.b-green { background: #dcfce7; color: #166534; }
+.b-blue { background: #dbeafe; color: #1e40af; }
+.b-amber { background: #fef3c7; color: #92400e; }
+.b-red { background: #fee2e2; color: #991b1b; }
+.b-grey { background: #f3f4f6; color: #374151; }
+.b-navy { background: #e0e7ff; color: #1e3a5f; }
+
+/* HEATMAP CELLS */
+.hm-hi { background: #dcfce7; color: #166534; text-align: center; font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+.hm-md { background: #fef3c7; color: #92400e; text-align: center; font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+.hm-lo { background: #fee2e2; color: #991b1b; text-align: center; font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+.hm-na { background: #f3f4f6; color: #9ca3af; text-align: center; font-family: var(--font-mono); font-size: 12px; }
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.insight-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
+.insight-box .label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #92400e; margin-bottom: 6px; }
+.insight-box p { font-size: 13px; color: #44403c; line-height: 1.6; }
+.alert-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
+.alert-box .label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #991b1b; margin-bottom: 6px; }
+.alert-box p { font-size: 13px; color: #44403c; line-height: 1.6; }
+.success-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
+.success-box .label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #166534; margin-bottom: 6px; }
+.success-box p { font-size: 13px; color: #44403c; line-height: 1.6; }
+
+/* RAW TABS */
+.raw-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.raw-tabs button { font-family: var(--font-body); font-size: 12px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
+.raw-tabs button.active, .raw-tabs button:hover { background: var(--navy); color: white; border-color: var(--navy); }
+
+/* FOOTNOTE */
+.footnote { font-size: 11px; color: var(--text-muted); margin-top: 8px; font-style: italic; }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .header { padding: 20px; }
+  .page { padding: 20px; }
+  .nav { padding: 0 16px; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .header-stats { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <h1>SAICRED v2 Benchmark</h1>
+    <p>Catholic Doctrinal Fidelity Index &nbsp;·&nbsp; 6 Models &nbsp;·&nbsp; April 2026</p>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="n">400</div><div class="l">Prompts</div></div>
+    <div class="hstat"><div class="n">2,400</div><div class="l">Responses</div></div>
+    <div class="hstat"><div class="n">21,268</div><div class="l">Scores</div></div>
+    <div class="hstat"><div class="n">6</div><div class="l">Models</div></div>
+  </div>
+</header>
+
+<div class="nav-wrap">
+  <nav class="nav">
+    <button class="active" onclick="show('overview',this)">Overview</button>
+    <button onclick="show('rankings',this)">Model rankings</button>
+    <button onclick="show('heatmap',this)">Metric heatmap</button>
+    <button onclick="show('failures',this)">Failure explorer</button>
+    <button onclick="show('variants',this)">Variant analysis</button>
+    <button onclick="show('topics',this)">Topic analysis</button>
+    <button onclick="show('distribution',this)">CDFI distribution</button>
+    <button onclick="show('raw',this)">Raw data</button>
+  </nav>
+</div>
+
+<!-- PAGE 1: OVERVIEW -->
+<div class="page active" id="overview">
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">84.9</div><div class="lbl">Top model avg CDFI (o3)</div></div>
+    <div class="kpi"><div class="val">78.0</div><div class="lbl">Lowest model avg CDFI (Claude)</div></div>
+    <div class="kpi"><div class="val">0</div><div class="lbl">Models at formation tier (≥85)</div></div>
+    <div class="kpi"><div class="val">17.0%</div><div class="lbl">Highest cap rate (Claude)</div></div>
+  </div>
+  <div class="alert-box">
+    <div class="label">Headline finding</div>
+    <p>All six models cleared the 70-point general information threshold. None cleared 85 for formation and catechesis. No current general-purpose AI model is cleared for catechetical use without human oversight.</p>
+  </div>
+  <div class="chart-box">
+    <h3>Average CDFI by model</h3>
+    <div class="legend">
+      <span><span class="dot" style="background:#16a34a"></span>Formation threshold (85)</span>
+      <span><span class="dot" style="background:#dc2626"></span>General threshold (70)</span>
+    </div>
+    <div class="chart-wrap" style="height:240px">
+      <canvas id="c1"></canvas>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Model</th><th>Avg CDFI</th><th>Median</th><th>Cap rate</th><th>Deployment tier</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><strong>o3</strong></td><td><span class="badge b-navy">84.9</span></td><td>94.0</td><td>8.0%</td><td><span class="badge b-blue">General approved</span></td></tr>
+        <tr><td>2</td><td><strong>Gemini 3.1 Pro</strong></td><td><span class="badge b-navy">82.5</span></td><td>91.6</td><td>14.5%</td><td><span class="badge b-blue">General approved</span></td></tr>
+        <tr><td>3</td><td><strong>GPT-5.4</strong></td><td><span class="badge b-navy">82.1</span></td><td>84.4</td><td>8.0%</td><td><span class="badge b-blue">General approved</span></td></tr>
+        <tr><td>4</td><td><strong>DeepSeek V4</strong></td><td><span class="badge b-navy">79.6</span></td><td>91.6</td><td>11.8%</td><td><span class="badge b-blue">General approved</span></td></tr>
+        <tr><td>5</td><td><strong>Grok 4</strong></td><td><span class="badge b-navy">78.8</span></td><td>94.0</td><td>15.2%</td><td><span class="badge b-blue">General approved</span></td></tr>
+        <tr><td>6</td><td><strong>Claude Sonnet 4.6</strong></td><td><span class="badge b-navy">78.0</span></td><td>89.2</td><td><span class="badge b-red">17.0%</span></td><td><span class="badge b-blue">General approved</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE 2: RANKINGS -->
+<div class="page" id="rankings">
+  <div class="chart-box">
+    <h3>Deployment tier distribution — responses per tier per model</h3>
+    <div class="legend">
+      <span><span class="dot" style="background:#16a34a"></span>Formation ≥85</span>
+      <span><span class="dot" style="background:#2563eb"></span>General 70–84</span>
+      <span><span class="dot" style="background:#9ca3af"></span>R&D 50–69</span>
+      <span><span class="dot" style="background:#dc2626"></span>Not recommended &lt;50</span>
+    </div>
+    <div class="chart-wrap" style="height:280px"><canvas id="c2"></canvas></div>
+  </div>
+  <div class="insight-box">
+    <div class="label">Bimodality note</div>
+    <p>Scores cluster at two points: very high (91.6 and 94.0) and capped floor (9.0 and 40.0). The mean is pulled down by cap events. Grok's median is 94.0 while its mean is 78.8 — a 15.2-point gap, widest in the dataset. Grok is volatile, not simply a low-average performer.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th>Avg</th><th>Median</th><th>Std dev</th><th>Formation %</th><th>Not rec %</th><th>Cap rate</th></tr></thead>
+      <tbody>
+        <tr><td>o3</td><td>84.9</td><td>94.0</td><td>17.2</td><td><span class="badge b-green">69.0%</span></td><td>9.0%</td><td>8.0%</td></tr>
+        <tr><td>Gemini 3.1 Pro</td><td>82.5</td><td>91.6</td><td>19.9</td><td><span class="badge b-green">64.8%</span></td><td>14.5%</td><td>14.5%</td></tr>
+        <tr><td>GPT-5.4</td><td>82.1</td><td>84.4</td><td>15.8</td><td><span class="badge b-amber">42.8%</span></td><td>8.5%</td><td>8.0%</td></tr>
+        <tr><td>DeepSeek V4</td><td>79.6</td><td>91.6</td><td>24.4</td><td>62.7%</td><td>16.8%</td><td>11.8%</td></tr>
+        <tr><td>Grok 4</td><td>78.8</td><td>94.0</td><td>26.0</td><td>68.8%</td><td><span class="badge b-red">20.0%</span></td><td>15.2%</td></tr>
+        <tr><td>Claude Sonnet 4.6</td><td>78.0</td><td>89.2</td><td>22.3</td><td>54.8%</td><td>19.0%</td><td><span class="badge b-red">17.0%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">GPT-5.4's low formation % (42.8%) is a formula artifact — 149 of 400 responses score exactly 84.4, just below the 85 threshold. This is not a behavioral finding.</p>
+</div>
+
+<!-- PAGE 3: HEATMAP -->
+<div class="page" id="heatmap">
+  <div class="chart-box">
+    <h3>Average score by model × metric (0–5 scale)</h3>
+    <div class="legend">
+      <span><span class="dot" style="background:#dcfce7;border:1px solid #16a34a"></span>Strong ≥4.7</span>
+      <span><span class="dot" style="background:#fef3c7;border:1px solid #d97706"></span>Moderate 4.4–4.7</span>
+      <span><span class="dot" style="background:#fee2e2;border:1px solid #dc2626"></span>Gap &lt;4.4</span>
+      <span><span class="dot" style="background:#f3f4f6;border:1px solid #9ca3af"></span>Stability placeholder</span>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="table-layout:fixed;min-width:700px">
+      <thead>
+        <tr>
+          <th style="width:140px">Model</th>
+          <th>Doc prec</th><th>Mor fid</th><th>Halluc</th><th>Conf cal</th>
+          <th>Rel res</th><th>Src cite</th><th>Complete</th><th>Pastoral</th>
+          <th style="color:#9ca3af">Stab*</th>
+        </tr>
+      </thead>
+      <tbody id="heatmapBody"></tbody>
+    </table>
+    </div>
+  </div>
+  <p class="footnote">* Stability hardcoded at 3.0 for all models — single evaluation run only. Requires minimum 5 runs per prompt for valid calculation.</p>
+  <div class="insight-box section-gap">
+    <div class="label">Three metrics to watch</div>
+    <p><strong>Moral fidelity:</strong> Widest gap between top and bottom. o3 at 4.71, Claude at 4.16. Flagged as Critical for moral theology and apologetics use cases in the SAICRED white paper.</p>
+    <p style="margin-top:8px"><strong>Source citation:</strong> GPT-5.4 at 2.41 — lowest in the field. 210 of 400 source citation scores are exactly 1. Responses are doctrinally accurate but cite no magisterial source.</p>
+    <p style="margin-top:8px"><strong>Relativism resistance:</strong> Separates the field most cleanly. o3 at 4.76, Claude at 4.24. Directly drives the cap rate pattern in the Failure Explorer.</p>
+  </div>
+</div>
+
+<!-- PAGE 4: FAILURES -->
+<div class="page" id="failures">
+  <div class="alert-box">
+    <div class="label">Cap rate correction</div>
+    <p>The dashboard_csv.py boolean parsing bug shows 0% cap rates for all models. These are the corrected values. Claude leads at 17.0%, o3 is lowest at 8.0%. The fix is a one-line change in dashboard_csv.py — check the Engineering Spec Note.</p>
+  </div>
+  <div class="two-col">
+    <div class="chart-box">
+      <h3>Hallucination failures by model</h3>
+      <div class="chart-wrap" style="height:260px"><canvas id="c4a"></canvas></div>
+    </div>
+    <div class="chart-box">
+      <h3>Relativism resistance failures by model</h3>
+      <div class="chart-wrap" style="height:260px"><canvas id="c4b"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-box">
+    <h3>Hard-fail cap rate by model (%)</h3>
+    <div class="chart-wrap" style="height:180px"><canvas id="c4c"></canvas></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th>Relativism fails</th><th>Hallucination fails</th><th>Both</th><th>Total cap events</th><th>Cap rate</th></tr></thead>
+      <tbody>
+        <tr><td>Claude Sonnet 4.6</td><td>41</td><td>7</td><td>20</td><td>68</td><td><span class="badge b-red">17.0%</span></td></tr>
+        <tr><td>Grok 4</td><td>44</td><td>6</td><td>11</td><td>61</td><td><span class="badge b-red">15.2%</span></td></tr>
+        <tr><td>Gemini 3.1 Pro</td><td>36</td><td>7</td><td>15</td><td>58</td><td><span class="badge b-amber">14.5%</span></td></tr>
+        <tr><td>DeepSeek V4</td><td>25</td><td>11</td><td>11</td><td>47</td><td><span class="badge b-amber">11.8%</span></td></tr>
+        <tr><td>GPT-5.4</td><td>18</td><td>3</td><td>11</td><td>32</td><td><span class="badge b-green">8.0%</span></td></tr>
+        <tr><td>o3</td><td>14</td><td>13</td><td>5</td><td>32</td><td><span class="badge b-green">8.0%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="insight-box">
+    <div class="label">Framing pattern in Claude's failures</div>
+    <p>Claude's 61 relativism failures concentrate outside the Catholic framing: 23 neutral, 24 Christian, 14 adversarial, zero on Catholic. The Catholic context cue eliminates Claude's relativism failures entirely. Without it, Claude defaults to multi-perspective framing the judge reads as treating Catholic doctrine as one opinion among several.</p>
+  </div>
+</div>
+
+<!-- PAGE 5: VARIANTS -->
+<div class="page" id="variants">
+  <div class="chart-box">
+    <h3>Average CDFI by model × framing variant</h3>
+    <div class="legend">
+      <span><span class="dot" style="background:#16a34a"></span>Catholic</span>
+      <span><span class="dot" style="background:#2563eb"></span>Christian</span>
+      <span><span class="dot" style="background:#9ca3af"></span>Neutral</span>
+      <span><span class="dot" style="background:#dc2626"></span>Adversarial</span>
+    </div>
+    <div class="chart-wrap" style="height:280px"><canvas id="c5"></canvas></div>
+  </div>
+  <div class="success-box">
+    <div class="label">The exception: o3</div>
+    <p>o3 shows a framing gap of −0.6 points. It does not depend on the Catholic context cue to hold the line on doctrine. Performance is consistent across all four variants — the primary reason o3 leads the rankings.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th>Catholic</th><th>Christian</th><th>Neutral</th><th>Adversarial</th><th>Gap (Cath − Adv)</th><th>Assessment</th></tr></thead>
+      <tbody>
+        <tr><td>Claude Sonnet 4.6</td><td>89.3</td><td>74.7</td><td>74.3</td><td>73.6</td><td><span class="badge b-red">+15.7</span></td><td>High framing sensitivity</td></tr>
+        <tr><td>DeepSeek V4</td><td>87.5</td><td>80.8</td><td>73.8</td><td>76.4</td><td><span class="badge b-amber">+11.1</span></td><td>Significant</td></tr>
+        <tr><td>Grok 4</td><td>86.9</td><td>79.4</td><td>72.6</td><td>76.1</td><td><span class="badge b-amber">+10.8</span></td><td>Significant</td></tr>
+        <tr><td>Gemini 3.1 Pro</td><td>90.3</td><td>78.1</td><td>79.5</td><td>82.0</td><td><span class="badge b-blue">+8.3</span></td><td>Moderate</td></tr>
+        <tr><td>GPT-5.4</td><td>87.8</td><td>79.1</td><td>78.0</td><td>83.3</td><td><span class="badge b-green">+4.5</span></td><td>Mild</td></tr>
+        <tr><td>o3</td><td>86.2</td><td>81.8</td><td>84.9</td><td>86.8</td><td><span class="badge b-green">−0.6</span></td><td>No framing dependency</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">The framing effect data is the empirical foundation for the SAICRED Prompt Playbooks deliverable — Steps 7 and 8 of the methodology.</p>
+</div>
+
+<!-- PAGE 6: TOPICS -->
+<div class="page" id="topics">
+  <div class="chart-box">
+    <h3>Field-average CDFI by topic domain (all models)</h3>
+    <div class="chart-wrap" style="height:300px"><canvas id="c6"></canvas></div>
+  </div>
+  <div class="insight-box">
+    <div class="label">Field-wide gaps</div>
+    <p>Scripture &amp; Interpretation (78.6) and Church Authority (78.8) are the two lowest-scoring domains across all models — not model-specific weaknesses. Both are flagged as high doctrinal risk in the SAICRED white paper Addendum B. Notable: Grok scores 62.4 on Salvation &amp; Grace and 66.8 on Scripture — both below the general information threshold on their own.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Topic domain</th><th>Claude</th><th>DeepSeek</th><th>Gemini</th><th>GPT-5.4</th><th>Grok</th><th>o3</th><th>Field avg</th></tr></thead>
+      <tbody id="topicBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE 7: DISTRIBUTION -->
+<div class="page" id="distribution">
+  <div class="chart-box">
+    <h3>Score band distribution per model (400 responses each)</h3>
+    <div class="legend">
+      <span><span class="dot" style="background:#16a34a"></span>Formation ≥85</span>
+      <span><span class="dot" style="background:#2563eb"></span>General 70–84</span>
+      <span><span class="dot" style="background:#9ca3af"></span>R&D 50–69</span>
+      <span><span class="dot" style="background:#dc2626"></span>Not recommended &lt;50</span>
+    </div>
+    <div class="chart-wrap" style="height:280px"><canvas id="c7"></canvas></div>
+  </div>
+  <div class="insight-box">
+    <div class="label">Bimodality explained</div>
+    <p>Scores cluster at two poles — very high (91.6, 94.0) and capped floor (9.0, 40.0). The middle range is thin for most models. This means the mean CDFI does not represent typical performance. The median is the more accurate summary for models with high cap rates.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th>Mean</th><th>Median</th><th>Std dev</th><th>≥85</th><th>70–84</th><th>50–69</th><th>&lt;50</th><th>Med–mean gap</th></tr></thead>
+      <tbody>
+        <tr><td>o3</td><td>84.9</td><td>94.0</td><td>17.2</td><td>276</td><td>68</td><td>20</td><td>36</td><td>+9.1</td></tr>
+        <tr><td>Gemini 3.1 Pro</td><td>82.5</td><td>91.6</td><td>19.9</td><td>259</td><td>79</td><td>4</td><td>58</td><td>+9.1</td></tr>
+        <tr><td>GPT-5.4</td><td>82.1</td><td>84.4</td><td>15.8</td><td>171</td><td>178</td><td>17</td><td>34</td><td>+2.3</td></tr>
+        <tr><td>DeepSeek V4</td><td>79.6</td><td>91.6</td><td>24.4</td><td>251</td><td>72</td><td>10</td><td>67</td><td>+12.0</td></tr>
+        <tr><td>Grok 4</td><td>78.8</td><td>94.0</td><td>26.0</td><td>275</td><td>36</td><td>9</td><td>80</td><td><span class="badge b-red">+15.2</span></td></tr>
+        <tr><td>Claude Sonnet 4.6</td><td>78.0</td><td>89.2</td><td>22.3</td><td>219</td><td>89</td><td>16</td><td>76</td><td>+11.2</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">Med–mean gap: positive value means median is higher than mean. Grok's +15.2 gap is the widest — it is a high-performing model with a specific failure mode, not simply a low-average performer.</p>
+</div>
+
+<!-- PAGE 8: RAW DATA -->
+<div class="page" id="raw">
+  <div class="raw-tabs">
+    <button class="active" onclick="showRaw('model',this)">By model</button>
+    <button onclick="showRaw('metric',this)">By metric</button>
+    <button onclick="showRaw('variant',this)">By variant</button>
+    <button onclick="showRaw('topic',this)">By topic</button>
+    <button onclick="showRaw('caps',this)">Cap events</button>
+  </div>
+  <div id="rawContent"></div>
+</div>
+
+<footer style="background:var(--navy);color:white;padding:20px 40px;font-size:12px;opacity:0.8;margin-top:40px">
+  SAICRED v2 &nbsp;·&nbsp; April 2026
+</footer>
+
+<script>
+const MODELS = ['o3','Gemini 3.1 Pro','GPT-5.4','DeepSeek V4','Grok 4','Claude Sonnet 4.6'];
+const COLORS = ['#16a34a','#2563eb','#1d4ed8','#d97706','#dc2626','#ef4444'];
+
+function show(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function hmClass(v) {
+  const n = parseFloat(v);
+  if (n >= 4.7) return 'hm-hi';
+  if (n >= 4.4) return 'hm-md';
+  if (isNaN(n)) return 'hm-na';
+  return 'hm-lo';
+}
+
+const heatRows = [
+  ['o3',               4.78,4.71,4.77,4.76,4.76,3.88,4.75,4.80],
+  ['Gemini 3.1 Pro',   4.82,4.52,4.72,4.78,4.36,3.54,4.80,4.76],
+  ['GPT-5.4',          4.74,4.60,4.82,4.76,4.64,2.41,4.73,4.75],
+  ['DeepSeek V4',      4.84,4.62,4.71,4.81,4.53,3.64,4.76,4.78],
+  ['Grok 4',           4.76,4.43,4.78,4.71,4.28,4.09,4.74,4.70],
+  ['Claude Sonnet 4.6',4.49,4.16,4.66,4.46,4.24,3.07,4.50,4.47],
+];
+const hb = document.getElementById('heatmapBody');
+heatRows.forEach(row => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><strong>${row[0]}</strong></td>` +
+    row.slice(1).map(v => `<td class="${hmClass(v)}">${v.toFixed(2)}</td>`).join('') +
+    `<td class="hm-na">3.0</td>`;
+  hb.appendChild(tr);
+});
+
+const topicRows = [
+  ['Apologetics',        77.3,87.3,85.1,82.6,79.2,85.4,82.8],
+  ['Church authority',   74.5,80.8,79.3,79.1,82.5,76.8,78.8],
+  ['Eschatology',        77.3,80.9,77.8,77.6,75.8,85.7,79.2],
+  ['Moral theology',     80.6,80.2,84.9,83.9,80.9,85.9,82.7],
+  ['Sacramental',        78.2,70.8,81.2,81.6,86.3,84.7,80.5],
+  ['Salvation & grace',  78.9,77.9,85.0,83.0,62.4,88.3,79.3],
+  ['Scripture',          74.1,80.8,78.5,83.8,66.8,87.4,78.6],
+];
+const tb = document.getElementById('topicBody');
+topicRows.forEach(row => {
+  const tr = document.createElement('tr');
+  const cells = row.slice(1).map((v,i) => {
+    const isLow = v < 70;
+    const badge = isLow ? `<span class="badge b-red">${v}</span>` : v;
+    return `<td>${badge}</td>`;
+  });
+  const avg = row[7];
+  const avgBadge = avg < 79 ? `<span class="badge b-amber">${avg}</span>` : `<strong>${avg}</strong>`;
+  tr.innerHTML = `<td>${row[0]}</td>${cells.join('')}<td>${avgBadge}</td>`;
+  tb.appendChild(tr);
+});
+
+const rawData = {
+  model: `<div class="table-wrap"><table><thead><tr><th>Model</th><th>Avg CDFI</th><th>Median</th><th>Std dev</th><th>Min</th><th>Max</th><th>Cap rate</th></tr></thead><tbody>
+    <tr><td>o3</td><td>84.9</td><td>94.0</td><td>17.2</td><td>9.0</td><td>94.0</td><td>8.0%</td></tr>
+    <tr><td>Gemini 3.1 Pro</td><td>82.5</td><td>91.6</td><td>19.9</td><td>9.0</td><td>94.0</td><td>14.5%</td></tr>
+    <tr><td>GPT-5.4</td><td>82.1</td><td>84.4</td><td>15.8</td><td>11.4</td><td>94.0</td><td>8.0%</td></tr>
+    <tr><td>DeepSeek V4</td><td>79.6</td><td>91.6</td><td>24.4</td><td>9.0</td><td>94.0</td><td>11.8%</td></tr>
+    <tr><td>Grok 4</td><td>78.8</td><td>94.0</td><td>26.0</td><td>9.0</td><td>94.0</td><td>15.2%</td></tr>
+    <tr><td>Claude Sonnet 4.6</td><td>78.0</td><td>89.2</td><td>22.3</td><td>9.0</td><td>94.0</td><td>17.0%</td></tr>
+    </tbody></table></div>`,
+  metric: `<div class="table-wrap"><table><thead><tr><th>Metric</th><th>o3</th><th>Gemini</th><th>GPT-5.4</th><th>DeepSeek</th><th>Grok</th><th>Claude</th><th>Field range</th></tr></thead><tbody>
+    <tr><td>Doctrinal precision</td><td>4.78</td><td>4.82</td><td>4.74</td><td>4.84</td><td>4.76</td><td>4.49</td><td>0.35</td></tr>
+    <tr><td>Moral fidelity</td><td>4.71</td><td>4.52</td><td>4.60</td><td>4.62</td><td>4.43</td><td><span class="badge b-red">4.16</span></td><td>0.55</td></tr>
+    <tr><td>Hallucination</td><td>4.77</td><td>4.72</td><td>4.82</td><td>4.71</td><td>4.78</td><td>4.66</td><td>0.16</td></tr>
+    <tr><td>Confidence calibration</td><td>4.76</td><td>4.78</td><td>4.76</td><td>4.81</td><td>4.71</td><td>4.46</td><td>0.35</td></tr>
+    <tr><td>Relativism resistance</td><td>4.76</td><td>4.36</td><td>4.64</td><td>4.53</td><td>4.28</td><td>4.24</td><td>0.52</td></tr>
+    <tr><td>Source citation</td><td>3.88</td><td>3.54</td><td><span class="badge b-red">2.41</span></td><td>3.64</td><td>4.09</td><td>3.07</td><td>1.68</td></tr>
+    <tr><td>Completeness</td><td>4.75</td><td>4.80</td><td>4.73</td><td>4.76</td><td>4.74</td><td>4.50</td><td>0.30</td></tr>
+    <tr><td>Pastoral appropriateness</td><td>4.80</td><td>4.76</td><td>4.75</td><td>4.78</td><td>4.70</td><td>4.47</td><td>0.33</td></tr>
+    <tr><td>Stability*</td><td colspan="7" style="text-align:center;color:#9ca3af;font-style:italic">3.0 hardcoded for all models — single run, not computed</td></tr>
+    </tbody></table></div>`,
+  variant: `<div class="table-wrap"><table><thead><tr><th>Model</th><th>Catholic</th><th>Christian</th><th>Neutral</th><th>Adversarial</th><th>Gap</th></tr></thead><tbody>
+    <tr><td>Claude Sonnet 4.6</td><td>89.3</td><td>74.7</td><td>74.3</td><td>73.6</td><td><span class="badge b-red">+15.7</span></td></tr>
+    <tr><td>DeepSeek V4</td><td>87.5</td><td>80.8</td><td>73.8</td><td>76.4</td><td><span class="badge b-amber">+11.1</span></td></tr>
+    <tr><td>Grok 4</td><td>86.9</td><td>79.4</td><td>72.6</td><td>76.1</td><td><span class="badge b-amber">+10.8</span></td></tr>
+    <tr><td>Gemini 3.1 Pro</td><td>90.3</td><td>78.1</td><td>79.5</td><td>82.0</td><td><span class="badge b-blue">+8.3</span></td></tr>
+    <tr><td>GPT-5.4</td><td>87.8</td><td>79.1</td><td>78.0</td><td>83.3</td><td><span class="badge b-green">+4.5</span></td></tr>
+    <tr><td>o3</td><td>86.2</td><td>81.8</td><td>84.9</td><td>86.8</td><td><span class="badge b-green">−0.6</span></td></tr>
+    </tbody></table></div>`,
+  topic: `<div class="table-wrap"><table><thead><tr><th>Topic</th><th>Claude</th><th>DeepSeek</th><th>Gemini</th><th>GPT-5.4</th><th>Grok</th><th>o3</th><th>Field avg</th></tr></thead><tbody>
+    <tr><td>Apologetics</td><td>77.3</td><td>87.3</td><td>85.1</td><td>82.6</td><td>79.2</td><td>85.4</td><td>82.8</td></tr>
+    <tr><td>Church authority</td><td>74.5</td><td>80.8</td><td>79.3</td><td>79.1</td><td>82.5</td><td>76.8</td><td>78.8</td></tr>
+    <tr><td>Eschatology</td><td>77.3</td><td>80.9</td><td>77.8</td><td>77.6</td><td>75.8</td><td>85.7</td><td>79.2</td></tr>
+    <tr><td>Moral theology</td><td>80.6</td><td>80.2</td><td>84.9</td><td>83.9</td><td>80.9</td><td>85.9</td><td>82.7</td></tr>
+    <tr><td>Sacramental theology</td><td>78.2</td><td>70.8</td><td>81.2</td><td>81.6</td><td>86.3</td><td>84.7</td><td>80.5</td></tr>
+    <tr><td>Salvation & grace</td><td>78.9</td><td>77.9</td><td>85.0</td><td>83.0</td><td><span class="badge b-red">62.4</span></td><td>88.3</td><td>79.3</td></tr>
+    <tr><td>Scripture</td><td>74.1</td><td>80.8</td><td>78.5</td><td>83.8</td><td><span class="badge b-red">66.8</span></td><td>87.4</td><td>78.6</td></tr>
+    </tbody></table></div>`,
+  caps: `<div class="table-wrap"><table><thead><tr><th>Model</th><th>Total caps</th><th>Relativism</th><th>Hallucination</th><th>Both</th><th>Cap rate</th><th>Primary driver</th></tr></thead><tbody>
+    <tr><td>Claude Sonnet 4.6</td><td>68</td><td>41</td><td>7</td><td>20</td><td><span class="badge b-red">17.0%</span></td><td>Relativism resistance</td></tr>
+    <tr><td>Grok 4</td><td>61</td><td>44</td><td>6</td><td>11</td><td><span class="badge b-red">15.2%</span></td><td>Relativism resistance</td></tr>
+    <tr><td>Gemini 3.1 Pro</td><td>58</td><td>36</td><td>7</td><td>15</td><td><span class="badge b-amber">14.5%</span></td><td>Relativism resistance</td></tr>
+    <tr><td>DeepSeek V4</td><td>47</td><td>25</td><td>11</td><td>11</td><td><span class="badge b-amber">11.8%</span></td><td>Mixed</td></tr>
+    <tr><td>GPT-5.4</td><td>32</td><td>18</td><td>3</td><td>11</td><td><span class="badge b-green">8.0%</span></td><td>Mixed</td></tr>
+    <tr><td>o3</td><td>32</td><td>14</td><td>13</td><td>5</td><td><span class="badge b-green">8.0%</span></td><td>Balanced</td></tr>
+    </tbody></table></div>`
+};
+
+function showRaw(type, btn) {
+  document.querySelectorAll('.raw-tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('rawContent').innerHTML = rawData[type];
+}
+showRaw('model', document.querySelector('.raw-tabs button'));
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 11;
+
+new Chart(document.getElementById('c1'), {
+  type: 'bar',
+  data: { labels: MODELS, datasets: [{ data: [84.9,82.5,82.1,79.6,78.8,78.0], backgroundColor: COLORS, borderWidth: 0, borderRadius: 4 }] },
+  options: { responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { min: 70, max: 90, grid: { color: '#f0ede8' }, ticks: { color: '#9ca3af' } },
+              x: { grid: { display: false }, ticks: { color: '#6b7280', maxRotation: 15 } } } }
+});
+
+new Chart(document.getElementById('c2'), {
+  type: 'bar',
+  data: { labels: MODELS, datasets: [
+    { label: 'Formation ≥85', data: [276,259,171,251,275,219], backgroundColor: '#16a34a', borderRadius: 0 },
+    { label: 'General 70–84', data: [68,79,178,72,36,89],   backgroundColor: '#2563eb', borderRadius: 0 },
+    { label: 'R&D 50–69',     data: [20,4,17,10,9,16],      backgroundColor: '#d1d5db', borderRadius: 0 },
+    { label: 'Not rec <50',   data: [36,58,34,67,80,76],    backgroundColor: '#dc2626', borderRadius: 0 },
+  ]},
+  options: { responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { stacked: true, grid: { display: false }, ticks: { color: '#6b7280', maxRotation: 15 } },
+              y: { stacked: true, grid: { color: '#f0ede8' }, ticks: { color: '#9ca3af' } } } }
+});
+
+new Chart(document.getElementById('c4a'), {
+  type: 'bar',
+  data: { labels: MODELS, datasets: [
+    { label: 'FAIL', data: [18,22,14,22,17,27], backgroundColor: '#dc2626', stack: 's1' },
+    { label: 'PASS', data: [381,377,386,357,366,372], backgroundColor: '#dcfce7', stack: 's1' },
+  ]},
+  options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { stacked: true, max: 420, ticks: { color: '#9ca3af', stepSize: 100 }, grid: { color: '#f0ede8' } },
+      y: { stacked: true, ticks: { color: '#6b7280', font: { size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+
+new Chart(document.getElementById('c4b'), {
+  type: 'bar',
+  data: { labels: MODELS, datasets: [
+    { label: 'FAIL', data: [19,51,29,36,55,61], backgroundColor: '#dc2626', stack: 's1' },
+    { label: 'PASS', data: [381,349,371,344,327,338], backgroundColor: '#dcfce7', stack: 's1' },
+  ]},
+  options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { stacked: true, max: 420, ticks: { color: '#9ca3af', stepSize: 100 }, grid: { color: '#f0ede8' } },
+      y: { stacked: true, ticks: { color: '#6b7280', font: { size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+
+new Chart(document.getElementById('c4c'), {
+  type: 'bar',
+  data: { labels: MODELS, datasets: [{ data: [8.0,14.5,8.0,11.8,15.2,17.0],
+    backgroundColor: ['#16a34a','#d97706','#16a34a','#d97706','#dc2626','#dc2626'], borderRadius: 4 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+    scales: { y: { min: 0, max: 22, ticks: { callback: v => v+'%', color: '#9ca3af' }, grid: { color: '#f0ede8' } },
+              x: { grid: { display: false }, ticks: { color: '#6b7280', maxRotation: 15 } } } }
+});
+
+new Chart(document.getElementById('c5'), {
+  type: 'bar',
+  data: { labels: MODELS, datasets: [
+    { label: 'Catholic',    data: [86.2,90.3,87.8,87.5,86.9,89.3], backgroundColor: '#16a34a' },
+    { label: 'Christian',   data: [81.8,78.1,79.1,80.8,79.4,74.7], backgroundColor: '#2563eb' },
+    { label: 'Neutral',     data: [84.9,79.5,78.0,73.8,72.6,74.3], backgroundColor: '#9ca3af' },
+    { label: 'Adversarial', data: [86.8,82.0,83.3,76.4,76.1,73.6], backgroundColor: '#dc2626' },
+  ]},
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+    scales: { y: { min: 60, max: 95, grid: { color: '#f0ede8' }, ticks: { color: '#9ca3af' } },
+              x: { grid: { display: false }, ticks: { color: '#6b7280', maxRotation: 15 } } } }
+});
+
+const topics = ['Apologetics','Church auth','Eschatology','Moral theol','Sacramental','Salvation','Scripture'];
+const topicAvg = [82.8,78.8,79.2,82.7,80.5,79.3,78.6];
+new Chart(document.getElementById('c6'), {
+  type: 'bar',
+  data: { labels: topics, datasets: [{ data: topicAvg, backgroundColor: topicAvg.map(v => v<79?'#dc2626':v<81?'#d97706':'#16a34a'), borderRadius: 4 }] },
+  options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 76, max: 85, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#f0ede8' } },
+      y: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 11 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('c7'), {
+  type: 'bar',
+  data: { labels: MODELS, datasets: [
+    { label: '≥85',   data: [276,259,171,251,275,219], backgroundColor: '#16a34a' },
+    { label: '70–84', data: [68,79,178,72,36,89],      backgroundColor: '#2563eb' },
+    { label: '50–69', data: [20,4,17,10,9,16],         backgroundColor: '#d1d5db' },
+    { label: '<50',   data: [36,58,34,67,80,76],       backgroundColor: '#dc2626' },
+  ]},
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+    scales: { x: { stacked: true, grid: { display: false }, ticks: { color: '#6b7280', maxRotation: 15 } },
+              y: { stacked: true, grid: { color: '#f0ede8' }, ticks: { color: '#9ca3af' } } } }
+});
+</script>
+</body>
+</html>
