@@ -161,8 +161,8 @@ tr:hover td { background: #fafaf8; }
   <div class="chart-box">
     <h3>Average CDFI by model</h3>
     <div class="legend">
-      <span><span class="dot" style="background:#16a34a"></span>Formation threshold (85)</span>
-      <span><span class="dot" style="background:#dc2626"></span>General threshold (70)</span>
+      <span><span style="display:inline-block;width:24px;height:2px;border-top:2px dashed #16a34a;vertical-align:middle;margin-right:5px"></span>Formation threshold — 85</span>
+      <span><span style="display:inline-block;width:24px;height:2px;border-top:2px dashed #dc2626;vertical-align:middle;margin-right:5px"></span>General threshold — 70</span>
     </div>
     <div class="chart-wrap" style="height:240px">
       <canvas id="c1"></canvas>
@@ -507,7 +507,28 @@ new Chart(document.getElementById('c1'), {
   options: { responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: { y: { min: 70, max: 90, grid: { color: '#f0ede8' }, ticks: { color: '#9ca3af' } },
-              x: { grid: { display: false }, ticks: { color: '#6b7280', maxRotation: 15 } } } }
+              x: { grid: { display: false }, ticks: { color: '#6b7280', maxRotation: 15 } } },
+    animation: { onComplete: function() {
+      const chart = this;
+      const ctx = chart.ctx;
+      const yScale = chart.scales.y;
+      const xStart = chart.chartArea.left;
+      const xEnd = chart.chartArea.right;
+      [{ val: 85, color: '#16a34a', label: 'Formation (85)' },
+       { val: 70, color: '#dc2626', label: 'General (70)' }].forEach(line => {
+        const y = yScale.getPixelForValue(line.val);
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = line.color;
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(xStart, y);
+        ctx.lineTo(xEnd, y);
+        ctx.stroke();
+        ctx.restore();
+      });
+    }}
+  }
 });
 
 new Chart(document.getElementById('c2'), {
